@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUN-TEXT</title>
+    <style>
+        body.light-mode {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        body.dark-mode {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        #marquee-container {
+            position: absolute;
+            display: inline-block;
+            cursor: move;
+        }
+
+        #marquee {
+            font-size: 20px;
+            height: 150px;
+            width: 300px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #000;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            background-color: inherit; /* Phù hợp với chế độ nền */
+            color: inherit; /* Văn bản cũng phù hợp với chế độ nền */
+        }
+
+        #marquee:hover {
+            overflow-y: scroll;
+        }
+
+        #marquee span {
+            position: relative;
+            word-wrap: break-word;
+            white-space: normal;
+            text-align: center;
+        }
+
+        .resize-handle {
+            width: 10px;
+            height: 10px;
+            background: #000;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            cursor: nwse-resize;
+        }
+
+        @keyframes marqueeVertical {
+            0% { transform: translateY(100%); }
+            100% { transform: translateY(-100%); }
+        }
+
+        /* Định vị nút chuyển đổi chế độ */
+        #toggle-mode {
+            position: fixed;
+            top: 10px; /* Cách trên cùng 10px */
+            right: 10px; /* Cách bên phải 10px */
+            padding: 10px 20px;
+            background-color: #ccc;
+            border: none;
+            cursor: pointer;
+            z-index: 1000; /* Luôn ở phía trên các thành phần khác */
+        }
+    </style>
+</head>
+<body class="light-mode">
+
+    <h2>RUN-TEXT</h2>
+
+    <label for="text-input">PASTE text vô đây -,- zamate:</label>
+    <input type="text" id="text-input" value="Xin chào! Đây là chữ chạy từ dưới lên và sẽ tự động xuống dòng nếu vượt quá chiều rộng khung.">
+    
+    <label for="size-input"><br><br><br>Kích thước chữ (px):</label>
+    <input type="number" id="size-input" value="30">
+
+    <label for="speed-input">Tốc độ (s):</label>
+    <input type="range" id="speed-input" min="1" max="100" value="50">
+<br>
+<br>
+
+    <div id="marquee-container">
+        <div id="marquee">
+            <span id="marquee-text">Xin chào! Đây là trình chữ chạy được cung cấp bởi Lia Văn Đẹc.</span>
+        </div>
+        <div class="resize-handle" id="resize-handle"></div>
+    </div>
+
+    <!-- Nút chuyển chế độ sáng/tối ở góc trên phải -->
+    <button id="toggle-mode">Chuyển chế độ tối</button>
+
+    <script>
+        function updateMarquee() {
+            var text = document.getElementById("text-input").value;
+            var size = document.getElementById("size-input").value;
+            var speed = document.getElementById("speed-input").value;
+
+            document.getElementById("marquee-text").textContent = text;
+            document.getElementById("marquee").style.fontSize = size + "px";
+
+            var marqueeText = document.getElementById("marquee-text");
+            var textHeight = marqueeText.offsetHeight;
+
+            var duration = (textHeight + 150) / (100 / speed);
+            marqueeText.style.animation = `marqueeVertical ${duration}s linear infinite`;
+        }
+
+        document.getElementById("marquee-text").style.animation = `marqueeVertical 8s linear infinite`;
+
+        document.getElementById("text-input").addEventListener("input", updateMarquee);
+        document.getElementById("size-input").addEventListener("input", updateMarquee);
+        document.getElementById("speed-input").addEventListener("input", updateMarquee);
+
+        const resizeHandle = document.getElementById("resize-handle");
+        const marquee = document.getElementById("marquee");
+
+        resizeHandle.addEventListener("mousedown", function(e) {
+            e.preventDefault();
+            document.addEventListener("mousemove", resizeMarquee);
+            document.addEventListener("mouseup", stopResize);
+        });
+
+        function resizeMarquee(e) {
+            const newWidth = e.clientX - marquee.getBoundingClientRect().left;
+            const newHeight = e.clientY - marquee.getBoundingClientRect().top;
+            marquee.style.width = newWidth + "px";
+            marquee.style.height = newHeight + "px";
+        }
+
+        function stopResize() {
+            document.removeEventListener("mousemove", resizeMarquee);
+            document.removeEventListener("mouseup", stopResize);
+        }
+
+        const marqueeContainer = document.getElementById("marquee-container");
+
+        marqueeContainer.addEventListener("mousedown", function(e) {
+            if (e.target === resizeHandle) return;
+
+            e.preventDefault();
+            let offsetX = e.clientX - marqueeContainer.getBoundingClientRect().left;
+            let offsetY = e.clientY - marqueeContainer.getBoundingClientRect().top;
+
+            function moveMarquee(e) {
+                marqueeContainer.style.left = e.clientX - offsetX + 'px';
+                marqueeContainer.style.top = e.clientY - offsetY + 'px';
+            }
+
+            function stopMove() {
+                document.removeEventListener("mousemove", moveMarquee);
+                document.removeEventListener("mouseup", stopMove);
+            }
+
+            document.addEventListener("mousemove", moveMarquee);
+            document.addEventListener("mouseup", stopMove);
+        });
+
+        // Chức năng chuyển chế độ sáng/tối
+        const toggleModeButton = document.getElementById("toggle-mode");
+        toggleModeButton.addEventListener("click", function() {
+            const body = document.body;
+
+            if (body.classList.contains("light-mode")) {
+                body.classList.remove("light-mode");
+                body.classList.add("dark-mode");
+                toggleModeButton.textContent = "Chuyển chế độ sáng";
+            } else {
+                body.classList.remove("dark-mode");
+                body.classList.add("light-mode");
+                toggleModeButton.textContent = "Chuyển chế độ tối";
+            }
+        });
+    </script>
+
+</body>
+</html>
